@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOIR CINEMA - Inventory System v5.0 (Firebase)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #7A2A90;
+            --primary-light: #9B4DB8;
+            --accent: #E8D5F2;
+            --text: #2C2C2C;
+            --danger: #D32F2F;
+            --success: #388E3C;
+        }
+        body {
+            font-family: 'GE SS Two', Arial, sans-serif;
+            background: linear-gradient(135deg, #F9F7FC 0%, #F0E6F6 100%);
+            color: var(--text);
+        }
+        .login-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #7A2A90 0%, #9B4DB8 100%);
+        }
+        .login-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .login-box h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .login-box p {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 30px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 2px solid var(--accent);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(122, 42, 144, 0.4);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: var(--primary);
+            font-size: 24px;
+        }
+        .user-info {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+        .logout-btn {
+            background: var(--danger);
+            padding: 8px 16px;
+            font-size: 12px;
+            margin-top: 10px;
+            width: auto;
+        }
+        .card {
+            background: white;
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .btn-group button {
+            padding: 10px;
+            font-size: 13px;
+        }
+        .btn-group button.active {
+            background: linear-gradient(135deg, var(--success) 0%, #66BB6A 100%);
+        }
+        .file-input-wrapper {
+            margin-bottom: 15px;
+        }
+        input[type="file"] {
+            padding: 8px;
+            border: 2px dashed var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .variance {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .variance.positive {
+            background: #C8E6C9;
+            color: var(--success);
+        }
+        .variance.negative {
+            background: #FFCDD2;
+            color: var(--danger);
+        }
+        .variance.zero {
+            background: #FFF9C4;
+            color: #F57F17;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-indicator.online {
+            background: var(--success);
+        }
+        .status-indicator.offline {
+            background: #999;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .action-buttons button {
+            flex: 1;
+        }
+        .save-btn {
+            background: linear-gradient(135deg, var(--success) 0%, #66BB6A 100%);
+        }
+        .reset-btn {
+            background: #FF9800;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid var(--accent);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .hidden { display: none; }
+        .timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-page">
+        <div class="login-box">
+            <h1>🎬 NOIR CINEMA</h1>
+            <p>Inventory Management System</p>
+            <input type="text" id="empId" placeholder="Employee ID (5 digits)" maxlength="5">
+            <input type="password" id="empPass" placeholder="Password (6 digits)" maxlength="6" onkeypress="if(event.key==='Enter') login()">
+            <button onclick="login()">Sign In</button>
+            <div class="timestamp" style="margin-top: 20px;">
+                <span class="status-indicator offline"></span> Connecting to Firebase...
+            </div>
+        </div>
+    </div>
+
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <div class="header">
+                <div>
+                    <h1>🎬 NOIR CINEMA - Inventory</h1>
+                    <p id="connStatus" style="font-size: 12px; color: #999;"><span class="status-indicator offline"></span> Offline</p>
+                </div>
+                <div class="user-info">
+                    <div>Employee: <strong id="empDisplay">-</strong></div>
+                    <div id="storeDisplay" style="margin-top: 5px;">Store: <strong>-</strong></div>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🏢 Store Selection</h2>
+                <div class="btn-group">
+                    <button onclick="selectStore('Mini Store')">Mini Store</button>
+                    <button onclick="selectStore('Refuel')">Refuel</button>
+                    <button onclick="selectStore('STORES')">STORES</button>
+                </div>
+            </div>
+
+            <div id="importCard" class="card hidden">
+                <h2>📦 Select Products</h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Choose between file upload or predefined products</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <button onclick="toggleImportMode('file')" id="fileBtn" class="active" style="background: var(--success);">📁 Upload File</button>
+                    <button onclick="toggleImportMode('products')" id="productsBtn">📦 Use Predefined</button>
+                </div>
+                
+                <div id="fileMode">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".pdf,.xls,.xlsx" onchange="handleFileSelect()">
+                    </div>
+                    <button onclick="importFile()">📤 Load from File</button>
+                </div>
+                
+                <div id="productsMode" class="hidden">
+                    <select id="productsList" style="width: 100%; padding: 10px; border: 2px solid var(--accent); border-radius: 6px; margin-bottom: 10px;">
+                        <option value="">-- Select Products --</option>
+                    </select>
+                    <button onclick="loadPredefinedProducts()">✅ Load Products</button>
+                </div>
+                
+                <div id="importStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+            </div>
+
+            <div id="tableCard" class="card hidden">
+                <h2 id="tableTitle">Inventory</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Product</th>
+                                <th style="width: 15%;">System</th>
+                                <th style="width: 15%;">Physical</th>
+                                <th style="width: 15%;">Variance</th>
+                                <th style="width: 15%;">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div class="action-buttons">
+                    <button class="save-btn" onclick="save()">💾 Save to Cloud</button>
+                    <button class="reset-btn" onclick="resetForm()">🔄 Reset</button>
+                </div>
+                <div id="saveStatus" class="timestamp" style="text-align: center; margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 15px;">Loading...</p>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6_u2nmehah9zmEFBLwQ7p_v40KgTgkeA",
+            authDomain: "noir-cinema-system.firebaseapp.com",
+            projectId: "noir-cinema-system",
+            databaseURL: "https://noir-cinema-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+            storageBucket: "noir-cinema-system.firebasestorage.app",
+            messagingSenderId: "372761169267",
+            appId: "1:372761169267:web:78873c4c08641490c2c906"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+        const auth = firebase.auth();
+
+        let importMode = 'file'; // or 'products'
+        let availableProducts = {};
+
+        function toggleImportMode(mode) {
+            importMode = mode;
+            document.getElementById('fileMode').classList.toggle('hidden', mode !== 'file');
+            document.getElementById('productsMode').classList.toggle('hidden', mode !== 'products');
+            document.getElementById('fileBtn').style.background = mode === 'file' ? 'var(--success)' : '';
+            document.getElementById('productsBtn').style.background = mode === 'products' ? 'var(--success)' : '';
+            
+            if (mode === 'products' && Object.keys(availableProducts).length === 0) {
+                loadProductsFromFirebase();
+            }
+        }
+
+        function loadProductsFromFirebase() {
+            showLoading(true);
+            db.ref('products').once('value', function(snapshot) {
+                showLoading(false);
+                if (snapshot.exists()) {
+                    availableProducts = snapshot.val();
+                    const select = document.getElementById('productsList');
+                    select.innerHTML = '<option value="">-- Select Products --</option>';
+                    
+                    Object.keys(availableProducts).forEach(store => {
+                        const option = document.createElement('option');
+                        option.value = store;
+                        option.textContent = store;
+                        select.appendChild(option);
+                    });
+                    
+                    document.getElementById('importStatus').textContent = '✅ Products loaded from database';
+                } else {
+                    document.getElementById('importStatus').textContent = '❌ No products found in database';
+                }
+            }).catch(function(error) {
+                showLoading(false);
+                document.getElementById('importStatus').textContent = '❌ Error loading products: ' + error.message;
+            });
+        }
+
+        function loadPredefinedProducts() {
+            const selectedStore = document.getElementById('productsList').value;
+            if (!selectedStore || !availableProducts[selectedStore]) {
+                alert('❌ Please select a store');
+                return;
+            }
+
+            currentStore = selectedStore;
+            document.getElementById('storeDisplay').innerHTML = 'Store: <strong>' + selectedStore + '</strong>';
+            document.getElementById('tableTitle').textContent = `${selectedStore} - Inventory`;
+            
+            products = {};
+            availableProducts[selectedStore].forEach(productName => {
+                products[productName] = 0; // default qty 0 for editing
+            });
+
+            renderTable();
+            document.getElementById('importStatus').textContent = `✅ Loaded ${Object.keys(products).length} products from ${selectedStore}`;
+        }
+
+        // Detect online/offline status
+        window.addEventListener('online', () => {
+            isOnline = true;
+            updateConnectionStatus();
+        });
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            updateConnectionStatus();
+        });
+
+        function updateConnectionStatus() {
+            const status = document.getElementById('connStatus');
+            if (isOnline && currentUser) {
+                status.innerHTML = '<span class="status-indicator online"></span> Online';
+            } else {
+                status.innerHTML = '<span class="status-indicator offline"></span> Offline';
+            }
+        }
+
+        async function init() {
+            try {
+                // Just set online status, don't require auth
+                isOnline = true;
+                updateConnectionStatus();
+            } catch (err) {
+                console.error('Init error:', err);
+            }
+        }
+
+        function login() {
+            const id = document.getElementById('empId').value;
+            const pass = document.getElementById('empPass').value;
+
+            if (!id || !pass) {
+                alert('❌ Please enter ID and password');
+                return;
+            }
+
+            showLoading(true);
+
+            db.ref('employees').child(id).once('value', function(snapshot) {
+                showLoading(false);
+                if (snapshot.exists()) {
+                    const emp = snapshot.val();
+                    if (emp.pass === pass) {
+                        currentUser = id;
+                        document.getElementById('empDisplay').textContent = id;
+                        document.getElementById('loginPage').classList.add('hidden');
+                        document.getElementById('mainApp').classList.remove('hidden');
+                    } else {
+                        alert('❌ Invalid password');
+                    }
+                } else {
+                    alert('❌ Employee not found');
+                }
+            }).catch(function(error) {
+                showLoading(false);
+                console.error('Login error:', error);
+                alert('❌ Login error: ' + error.message);
+            });
+        }
+
+        function logout() {
+            if (confirm('Logout?')) {
+                currentUser = null;
+                currentStore = null;
+                products = {};
+                document.getElementById('loginPage').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('empId').value = '';
+                document.getElementById('empPass').value = '';
+            }
+        }
+
+        function selectStore(store) {
+            currentStore = store;
+            document.getElementById('storeDisplay').innerHTML = 'Store: <strong>' + store + '</strong>';
+            document.getElementById('tableTitle').textContent = `Unaizah - ${store}`;
+            document.getElementById('importCard').classList.remove('hidden');
+            document.getElementById('tableCard').classList.add('hidden');
+            document.getElementById('tableBody').innerHTML = '';
+            products = {};
+        }
+
+        function handleFileSelect() {
+            const file = document.getElementById('fileInput').files[0];
+            if (file) {
+                document.getElementById('importStatus').textContent = `Selected: ${file.name}`;
+            }
+        }
+
+        async function importFile() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                alert('Select a file (PDF or Excel)');
+                return;
+            }
+
+            showLoading(true);
+            document.getElementById('importStatus').textContent = 'Processing...';
+
+            try {
+                if (file.name.endsWith('.pdf')) {
+                    await importPDF(file);
+                } else {
+                    importExcel(file);
+                }
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+                document.getElementById('importStatus').textContent = 'Error loading file';
+            }
+            showLoading(false);
+        }
+
+        async function importPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            products = {};
+            let allText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                allText += pageText + '\n';
+            }
+
+            const lines = allText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let inTargetStore = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (line === currentStore) {
+                    inTargetStore = true;
+                    continue;
+                }
+
+                if (inTargetStore && (line === 'Mini Store' || line === 'Refuel' || line === 'STORES' || line === 'Grand Total')) {
+                    if (line !== currentStore) break;
+                }
+
+                if (inTargetStore && line.length > 0) {
+                    const productMatch = parseProductLine(line);
+                    if (productMatch) {
+                        products[productMatch.name] = productMatch.qty;
+                    }
+                }
+            }
+
+            if (Object.keys(products).length === 0) {
+                alert(`❌ No products found for ${currentStore}`);
+                return;
+            }
+
+            renderTable();
+            document.getElementById('importStatus').textContent = `✅ Loaded ${Object.keys(products).length} products`;
+        }
+
+        function parseProductLine(line) {
+            const cleaned = line.replace(/\s+/g, ' ').trim();
+
+            if (cleaned.includes('Raw Material') || cleaned.includes('Location') || 
+                cleaned.includes('Rate') || cleaned.includes('Amount') ||
+                cleaned.includes('Bldg') || cleaned.includes('Page') ||
+                cleaned.includes('Total')) {
+                return null;
+            }
+
+            const parts = cleaned.split(/\s+/);
+            let qtyIndex = -1;
+            let qty = 0;
+
+            for (let i = 0; i < parts.length && i < 3; i++) {
+                const num = parseFloat(parts[i]);
+                if (!isNaN(num) && num > 0) {
+                    qty = num;
+                    qtyIndex = i;
+                    break;
+                }
+            }
+
+            if (qtyIndex === -1) return null;
+
+            const productName = parts.slice(0, qtyIndex).join(' ').trim();
+            if (productName.length < 3) return null;
+
+            return { name: productName, qty: qty };
+        }
+
+        function importExcel(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet);
+
+                products = {};
+                json.forEach(row => {
+                    const location = String(row['Location'] || row['Store'] || '');
+                    if (location.includes(currentStore)) {
+                        const name = String(row['Raw Material Name'] || row['Product'] || '').trim();
+                        const qty = parseFloat(row['System Stock'] || row['Qty'] || row['Quantity'] || 0);
+                        if (name && qty > 0) {
+                            products[name] = qty;
+                        }
+                    }
+                });
+
+                if (Object.keys(products).length === 0) {
+                    alert(`❌ No products for ${currentStore}`);
+                    return;
+                }
+
+                renderTable();
+                document.getElementById('importStatus').textContent = `✅ Loaded ${Object.keys(products).length} products`;
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            Object.keys(products).forEach(name => {
+                const sysQty = products[name]; // Will be 0 for predefined products
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${name}</td>
+                    <td>${sysQty}</td>
+                    <td><input type="number" value="0" data-product="${name}" style="width: 70px;"></td>
+                    <td><span class="variance zero">0</span></td>
+                    <td><input type="text" placeholder="Notes"></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('change', updateVariance);
+            });
+
+            document.getElementById('tableCard').classList.remove('hidden');
+        }
+
+        function updateVariance(e) {
+            const physical = parseInt(e.target.value) || 0;
+            const system = parseInt(e.target.parentElement.parentElement.cells[1].textContent);
+            const variance = physical - system;
+            const varSpan = e.target.parentElement.parentElement.cells[3].querySelector('.variance');
+
+            varSpan.textContent = variance;
+            varSpan.className = 'variance';
+            if (variance > 0) varSpan.classList.add('positive');
+            else if (variance < 0) varSpan.classList.add('negative');
+            else varSpan.classList.add('zero');
+        }
+
+        function save() {
+            if (!currentStore || !currentUser) {
+                alert('❌ Store or user not selected');
+                return;
+            }
+
+            showLoading(true);
+
+            const inventory = {
+                timestamp: new Date().toISOString(),
+                store: currentStore,
+                employee: currentUser,
+                products: {}
+            };
+
+            document.querySelectorAll('#tableBody tr').forEach((row) => {
+                const cells = row.cells;
+                const productName = cells[0].textContent;
+                const system = parseInt(cells[1].textContent);
+                const physical = parseInt(row.querySelector('input[type="number"]').value) || 0;
+                const variance = parseInt(cells[3].textContent);
+                const notes = row.querySelector('input[type="text"]').value;
+
+                inventory.products[productName] = {
+                    system,
+                    physical,
+                    variance,
+                    notes
+                };
+            });
+
+            const inventoryKey = `${currentStore}_${Date.now()}`;
+            db.ref('inventories').child(inventoryKey).set(inventory, function(error) {
+                showLoading(false);
+                if (error) {
+                    alert('❌ Save error: ' + error.message);
+                } else {
+                    document.getElementById('saveStatus').innerHTML = '✅ Saved to cloud at ' + new Date().toLocaleTimeString();
+                    alert('✅ Inventory saved!');
+                }
+            });
+        }
+
+        function resetForm() {
+            if (confirm('Reset form?')) {
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.value = '0';
+                    input.dispatchEvent(new Event('change'));
+                });
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingModal').classList.toggle('active', show);
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
